@@ -37,6 +37,7 @@ export default function ResumeUploadPage() {
             // Show success and store the file preview URL
             setMessage('Resume uploaded successfully!');
             setResumeUrl(response.data.fileUrl); // 👈 from Spring Boot response
+            console.log('Preview file URL:', response.data.fileUrl);
         } catch (error) {
             console.error('Upload failed:', error.message);
             setMessage('Upload failed.');
@@ -92,14 +93,11 @@ export default function ResumeUploadPage() {
         )}
         {/* ✅ PDF Preview goes here */}
         {resumeUrl && (
-            <div className="mt-6">
-                <h2 className="text-lg font-semibold mb-2">Resume Preview</h2>
-                <iframe
-                    src={resumeUrl}
-                    className="w-full h-96 border rounded"
-                    title="Resume Preview"
-                />
-            </div>
+            <iframe
+                src={resumeUrl}
+                className="w-full h-96 border rounded"
+                title="Resume Preview"
+            />
         )}
     </div>
     );
