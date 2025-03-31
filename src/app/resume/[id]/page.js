@@ -33,6 +33,11 @@ export default function ResumeResultsPage() {
 
   return (
     <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow rounded space-y-6">
+      {/* ✅ Confirmation Banner */}
+      <div className="bg-green-100 text-green-800 p-4 rounded">
+        ✅ Resume uploaded and parsed successfully!
+      </div>
+
       <h1 className="text-2xl font-bold text-gray-800">Resume Details</h1>
 
       <div className="space-y-2 text-gray-700">
@@ -40,8 +45,21 @@ export default function ResumeResultsPage() {
         <p><strong>Email:</strong> {resume.email}</p>
         <p><strong>Skills:</strong> {resume.skills}</p>
         <p><strong>Education:</strong> {resume.education}</p>
+
+        {/* ✅ Show formatted experience OR fallback to rawText */}
         <p><strong>Experience:</strong></p>
-        <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded">{resume.experience}</pre>
+        {resume.experience && resume.experience !== "Experience not found" ? (
+          <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded">
+            {resume.experience}
+          </pre>
+        ) : (
+          <div>
+            <p className="text-red-600 font-medium">⚠️ Experience section not detected — showing full resume instead:</p>
+            <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded mt-2 text-sm">
+              {resume.rawText}
+            </pre>
+          </div>
+        )}
       </div>
 
       <hr className="my-6" />

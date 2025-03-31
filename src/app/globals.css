@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Force modal scroll behavior */
+.scroll-container {
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 4px; /* prevent content clipping */
+}
