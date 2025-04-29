@@ -1,85 +1,109 @@
 'use client';
 
+// Importing React hooks and router
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import Header from '@/components/Header';
+
 import axios from 'axios';
 
-export default function ResumeResultsPage() {
-  const { id } = useParams(); // 👈 Gets resume ID from URL
-  const [resume, setResume] = useState(null);
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
+// Importing confetti animation
+import confetti from 'canvas-confetti';
 
+export default function UploadSuccessPage() {
+  const { id } = useParams(); // Extract resume ID from URL
+  const router = useRouter(); // For page navigation
+
+  const [resume, setResume] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isFindingMatches, setIsFindingMatches] = useState(false); // State for "Finding Matches" button
+
+  // Fetch resume details when page loads
   useEffect(() => {
-    const fetchResumeAndMatches = async () => {
+    const fetchResume = async () => {
       try {
-        const resumeRes = await axios.get(`http://localhost:8080/api/resumes/${id}`);
-        const matchRes = await axios.get(`http://localhost:8080/api/resumes/${id}/matches`);
-        setResume(resumeRes.data);
-        setMatches(matchRes.data);
+        const res = await axios.get(`http://localhost:8080/api/resumes/${id}`);
+        setResume(res.data);
+
+        // 🎉 Trigger confetti once resume is successfully fetched
+        confetti({
+          particleCount: 120,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
       } catch (error) {
-        console.error('Error fetching resume or matches:', error.message);
+        console.error('Error fetching resume:', error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchResumeAndMatches();
+    fetchResume();
   }, [id]);
 
-  if (loading) return <p className="text-center mt-10">Loading...</p>;
+  // Redirect to matches page with a small delay
+  const handleFindMatches = () => {
+    setIsFindingMatches(true);
+    setTimeout(() => {
+      router.push(`/resume/${id}/matches`);
+    }, 2000); // 2 second suspense delay
+  };
 
-  if (!resume) return <p className="text-center mt-10 text-red-600">Resume not found.</p>;
+  // Show loading spinner while fetching resume
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-sky-100">
+        <div className="text-lg font-semibold text-gray-600 animate-pulse">
+          Loading your resume...
+        </div>
+      </div>
+    );
+  }
 
+  // If no resume found
+  if (!resume) {
+    return (
+      <div className="text-center text-red-600 mt-20 text-lg">
+        ❌ Resume not found.
+      </div>
+    );
+  }
+
+  // Main Success Content
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow rounded space-y-6">
-      {/* ✅ Confirmation Banner */}
-      <div className="bg-green-100 text-green-800 p-4 rounded">
-        ✅ Resume uploaded and parsed successfully!
+    <>
+    <Header /> {/* ✅ Consistent navbar */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-sky-100 px-4 py-12">
+      <div className="bg-white shadow-xl rounded-2xl p-8 max-w-2xl w-full space-y-8 text-center">
+
+        {/* ✅ Success Banner */}
+        <div className="bg-green-100 border-l-4 border-green-500 text-green-800 p-4 rounded-lg shadow-sm text-lg font-semibold">
+          🎉 Resume uploaded successfully!
+        </div>
+
+        {/* ✅ Resume Mini Preview */}
+        <div className="space-y-3 text-gray-700">
+          <h2 className="text-2xl font-bold text-gray-800">Resume Summary</h2>
+          <p><strong>Name:</strong> {resume.candidateName}</p>
+          <p><strong>Email:</strong> {resume.email}</p>
+          <p><strong>Skills:</strong> {resume.skills ? resume.skills.slice(0, 100) + (resume.skills.length > 100 ? '...' : '') : 'N/A'}</p>
+        </div>
+
+        {/* 🚀 Find My Matches Button */}
+        <button
+          onClick={handleFindMatches}
+          disabled={isFindingMatches}
+          className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition disabled:opacity-50"
+        >
+          {isFindingMatches ? '🎯 Finding your matches...' : '🚀 See My Matches'}
+        </button>
+
+        {/* 📝 Small Helper Note */}
+        <p className="text-sm text-gray-500">
+          Matching you with top jobs based on your skills.
+        </p>
       </div>
-
-      <h1 className="text-2xl font-bold text-gray-800">Resume Details</h1>
-
-      <div className="space-y-2 text-gray-700">
-        <p><strong>Name:</strong> {resume.candidateName}</p>
-        <p><strong>Email:</strong> {resume.email}</p>
-        <p><strong>Skills:</strong> {resume.skills}</p>
-        <p><strong>Education:</strong> {resume.education}</p>
-
-        {/* ✅ Show formatted experience OR fallback to rawText */}
-        <p><strong>Experience:</strong></p>
-        {resume.experience && resume.experience !== "Experience not found" ? (
-          <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded">
-            {resume.experience}
-          </pre>
-        ) : (
-          <div>
-            <p className="text-red-600 font-medium">⚠️ Experience section not detected — showing full resume instead:</p>
-            <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded mt-2 text-sm">
-              {resume.rawText}
-            </pre>
-          </div>
-        )}
-      </div>
-
-      <hr className="my-6" />
-
-      <h2 className="text-xl font-semibold text-gray-800">Matched Jobs</h2>
-      {matches.length === 0 ? (
-        <p>No matches found for this resume.</p>
-      ) : (
-        <ul className="space-y-4">
-          {matches.map((job, idx) => (
-            <li key={idx} className="border p-4 rounded bg-gray-50">
-              <h3 className="font-bold">{job.title}</h3>
-              <p><strong>Company:</strong> {job.company}</p>
-              <p><strong>Location:</strong> {job.location}</p>
-              <p><strong>Match Score:</strong> {(job.matchScore * 100).toFixed(0)}%</p>
-              <p className="text-sm text-gray-600 mt-2">{job.description}</p>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
+    </>
   );
 }
